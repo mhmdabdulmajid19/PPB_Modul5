@@ -14,6 +14,7 @@ import {
   Send,
   Edit,
   Trash2,
+  Share2, // <-- Ditambahkan
 } from 'lucide-react';
 import recipeService from '../../services/recipeService';
 import ConfirmModal from '../modals/ConfirmModal';
@@ -54,6 +55,28 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
 
   const colors = categoryColors[category] || categoryColors.makanan;
 
+  // Fungsi untuk menangani berbagi resep
+  const handleShare = async () => {
+    const shareData = {
+      title: recipe.name,
+      text: `Lihat resep ini: ${recipe.name}`, // Mengubah teks ke Bahasa Indonesia
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Link berhasil disalin ke clipboard!');
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
+    }
+  };
+
+
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     const userProfile = userService.getUserProfile();
@@ -62,12 +85,15 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
       rating,
       comment: comment.trim(),
     };
-    const success = await createReview(recipeId, reviewData);
-    if (success) {
+    // Menggunakan 'result' karena createReview mengembalikan objek respons jika sukses
+    const result = await createReview(recipeId, reviewData); 
+    
+    // PENTING: Jika result ada (truthy, berarti sukses), lakukan update UI
+    if (result) {
       setComment('');
       setRating(5);
       setShowReviewForm(false);
-      refetchReviews();
+      refetchReviews(); // <-- Memanggil fungsi ini untuk memuat ulasan baru
     }
   };
 
@@ -203,9 +229,17 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
             <img src={recipe.image_url} alt={recipe.name} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-            {/* Favorite Button */}
-            <div className="absolute top-4 right-4 z-10">
+            {/* Favorite & Share Buttons (UPDATED) */}
+            <div className="absolute top-4 right-4 z-10 flex gap-2">
               <FavoriteButton recipeId={recipeId} size="lg" />
+            
+              <button
+                onClick={handleShare}
+                className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm text-slate-700 hover:bg-white shadow-md hover:shadow-lg transition-all flex items-center justify-center"
+                title="Bagikan resep"
+              >
+                <Share2 className="w-6 h-6" />
+              </button>
             </div>
 
             {/* Category Badge */}
@@ -355,13 +389,13 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
 
           {/* Review Form */}
           {showReviewForm && (
-            <form
-              onSubmit={handleSubmitReview}
-              className="mb-8 bg-white/70 rounded-2xl p-6 border border-white/60"
-            >
+            <form onSubmit={handleSubmitReview} className="mb-8 bg-white/70 rounded-2xl p-6 border border-white/60">
+              <h3 className="font-semibold text-slate-800 mb-4">Tulis Ulasan Anda</h3>
+              
+              {/* Rating Stars */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Rating
+                  Rating <span className="text-red-500">*</span>
                 </label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -372,17 +406,21 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
                       className="focus:outline-none"
                     >
                       <Star
-                        className={`w-8 h-8 ${
+                        className={`w-8 h-8 transition-transform hover:scale-110 ${
                           star <= rating
                             ? 'text-amber-500 fill-current'
                             : 'text-slate-300'
-                        } hover:scale-110 transition-transform`}
+                        }`}
                       />
                     </button>
                   ))}
                 </div>
+                <p className="text-sm text-slate-500 mt-1">
+                  Rating Anda: {rating} dari 5 bintang
+                </p>
               </div>
 
+              {/* Comment */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Komentar
@@ -394,6 +432,9 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
                   rows={4}
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white resize-none"
                 />
+                <p className="text-sm text-slate-500 mt-1">
+                  {comment.length}/500 karakter
+                </p>
               </div>
 
               <button

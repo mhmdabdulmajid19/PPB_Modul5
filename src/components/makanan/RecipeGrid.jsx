@@ -3,6 +3,47 @@
 import { Clock, Star, ChefHat } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import FavoriteButton from '../common/FavoriteButton';
+import { useLazyLoad } from '../../hooks/useLazyLoad'; // <-- Ditambahkan Import
+
+// Komponen Pembantu untuk mengurus Image Lazy Loading
+function RecipeCardImage({ recipe, onRecipeClick }) {
+  // Menggunakan hook useLazyLoad untuk menentukan kapan gambar harus dimuat
+  const [ref, isIntersecting] = useLazyLoad();
+
+  return (
+    // Membungkus logic lazy load di div gambar
+    <div 
+      ref={ref} // Ref dipasang di div ini untuk IntersectionObserver
+      className="relative h-32 md:h-56 overflow-hidden bg-slate-200" // Placeholder bg
+      onClick={() => onRecipeClick && onRecipeClick(recipe.id)} // Klik dipindahkan ke sini
+    >
+      {isIntersecting ? (
+        // Memuat gambar jika elemen terlihat (intersecting)
+        <img
+          src={recipe.image_url}
+          alt={recipe.name}
+          // Menggunakan loading="lazy" untuk bantuan browser dan mempertahankan efek hover
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          loading="lazy"
+        />
+      ) : (
+        // Placeholder (skeleton loading effect) saat belum terlihat
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="animate-pulse bg-slate-300 w-full h-full" />
+        </div>
+      )}
+      
+      {/* Overlays dan Button (dari desain asli) */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+      
+      {/* Favorite Button */}
+      <div className="absolute top-3 right-3 z-10">
+        <FavoriteButton recipeId={recipe.id} size="sm" />
+      </div>
+    </div>
+  );
+}
+
 
 export default function RecipeGrid({ recipes, onRecipeClick }) {
   const [visibleCards, setVisibleCards] = useState(new Set());
@@ -15,6 +56,7 @@ export default function RecipeGrid({ recipes, onRecipeClick }) {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           const index = parseInt(entry.target.dataset.index);
+          // Logika Staggered Animation
           setTimeout(() => {
             setVisibleCards(prev => new Set(prev).add(index));
           }, (index % 3) * 150);
@@ -55,24 +97,13 @@ export default function RecipeGrid({ recipes, onRecipeClick }) {
             }`}
           >
             <div
-              onClick={() => onRecipeClick && onRecipeClick(recipe.id)}
+              // Hapus onClick di sini karena sudah dipindahkan ke RecipeCardImage
               className="relative bg-white/15 backdrop-blur-xl border border-white/25 rounded-2xl md:rounded-3xl overflow-hidden shadow-lg md:shadow-2xl shadow-blue-500/5 hover:shadow-blue-500/15 transition-all duration-500 cursor-pointer group-hover:scale-105 group-hover:bg-white/20"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               
-              <div className="relative h-32 md:h-56 overflow-hidden">
-                <img
-                  src={recipe.image_url}
-                  alt={recipe.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-                
-                {/* Favorite Button */}
-                <div className="absolute top-3 right-3 z-10">
-                  <FavoriteButton recipeId={recipe.id} size="sm" />
-                </div>
-              </div>
+              {/* PENGGANTIAN: Menggunakan komponen Image Lazy Loading */}
+              <RecipeCardImage recipe={recipe} onRecipeClick={onRecipeClick} />
 
               <div className="relative z-10 p-4 md:p-8">
                 <div className="flex items-center justify-between mb-3 md:mb-4">

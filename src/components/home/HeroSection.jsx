@@ -1,16 +1,44 @@
 // src/components/home/HeroSection.jsx
 import { ChefHat, Play, ArrowRight } from 'lucide-react';
+import { useLazyLoad } from '../../hooks/useLazyLoad'; // <-- Ditambahkan import hook
+
+// Komponen Pembantu untuk mengimplementasikan Lazy Loading
+// Komponen ini akan ditempatkan di dalam div yang sudah memiliki dimensi (misalnya h-40 atau h-80)
+const LazyImage = ({ src, alt, className }) => {
+  const [ref, isIntersecting] = useLazyLoad();
+
+  return (
+    <div 
+      ref={ref} 
+      className="w-full h-full"
+    >
+      {isIntersecting ? (
+        <img
+          src={src}
+          alt={alt}
+          className={className}
+          loading="lazy"
+        />
+      ) : (
+        // Placeholder (Skeleton Loading)
+        <div className="w-full h-full animate-pulse bg-slate-300" /> 
+      )}
+    </div>
+  );
+};
 
 export default function HeroSection() {
   return (
     <section className="relative overflow-hidden min-h-screen md:min-h-[85vh] flex items-center">
         
+      {/* Decorative Background Elements */}
       <div className="absolute top-20 left-10 w-40 h-40 bg-gradient-to-r from-blue-400/20 to-indigo-400/20 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-32 right-12 w-32 h-32 bg-gradient-to-r from-purple-300/20 to-pink-300/20 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
       <div className="absolute top-1/3 right-8 w-24 h-24 bg-gradient-to-r from-cyan-200/30 to-blue-200/30 rounded-full blur-xl animate-pulse" style={{ animationDelay: '2.5s' }} />
       <div className="absolute bottom-1/4 left-16 w-20 h-20 bg-gradient-to-r from-indigo-200/25 to-blue-200/25 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '3s' }} />
       <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-gradient-to-r from-blue-300/15 to-purple-300/15 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '4s' }} />
 
+      {/* MOBILE VIEW */}
       <div className="md:hidden relative z-10 w-full px-4 py-8 text-center">
         <div className="mb-4">
           <h2 className="text-2xl font-medium text-slate-800 mb-2">
@@ -34,7 +62,7 @@ export default function HeroSection() {
             <div className="relative group">
               <div className="bg-white/15 backdrop-blur-2xl border border-white/25 rounded-2xl overflow-hidden shadow-xl shadow-blue-500/10 hover:shadow-blue-500/20 transition-all duration-500 hover:scale-105">
                 <div className="w-full h-40 overflow-hidden">
-                  <img 
+                  <LazyImage 
                     src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                     alt="Featured Recipe"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
@@ -48,7 +76,7 @@ export default function HeroSection() {
               <div className="relative group">
                 <div className="bg-white/15 backdrop-blur-2xl border border-white/25 rounded-2xl overflow-hidden shadow-xl shadow-indigo-500/10 hover:shadow-indigo-500/20 transition-all duration-500 hover:scale-105">
                   <div className="w-full h-20 overflow-hidden">
-                    <img 
+                    <LazyImage 
                       src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200&h=150&fit=crop&crop=center"
                       alt="Featured Recipe 2"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
@@ -60,7 +88,7 @@ export default function HeroSection() {
               <div className="relative group">
                 <div className="bg-white/15 backdrop-blur-2xl border border-white/25 rounded-2xl overflow-hidden shadow-xl shadow-purple-500/10 hover:shadow-purple-500/20 transition-all duration-500 hover:scale-105">
                   <div className="w-full h-20 overflow-hidden">
-                    <img 
+                    <LazyImage 
                       src="https://images.unsplash.com/photo-1544145945-f90425340c7e?w=200&h=150&fit=crop&crop=center"
                       alt="Featured Drink"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
@@ -85,6 +113,7 @@ export default function HeroSection() {
         </div>
       </div>
 
+      {/* DESKTOP VIEW */}
       <div className="hidden md:block relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           
@@ -126,7 +155,7 @@ export default function HeroSection() {
               <div className="relative group">
                 <div className="bg-white/15 backdrop-blur-2xl border border-white/25 rounded-3xl overflow-hidden shadow-xl shadow-blue-500/10 hover:shadow-blue-500/20 transition-all duration-500 hover:scale-105">
                   <div className="w-full h-80 overflow-hidden">
-                    <img 
+                    <LazyImage 
                       src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                       alt="Featured Recipe"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
@@ -140,7 +169,7 @@ export default function HeroSection() {
                 <div className="relative group">
                   <div className="bg-white/15 backdrop-blur-2xl border border-white/25 rounded-3xl overflow-hidden shadow-xl shadow-indigo-500/10 hover:shadow-indigo-500/20 transition-all duration-500 hover:scale-105">
                     <div className="w-full h-40 overflow-hidden">
-                      <img 
+                      <LazyImage 
                         src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=250&fit=crop&crop=center"
                         alt="Featured Recipe 2"
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
@@ -152,7 +181,7 @@ export default function HeroSection() {
                 <div className="relative group">
                   <div className="bg-white/15 backdrop-blur-2xl border border-white/25 rounded-3xl overflow-hidden shadow-xl shadow-purple-500/10 hover:shadow-purple-500/20 transition-all duration-500 hover:scale-105">
                     <div className="w-full h-40 overflow-hidden">
-                      <img 
+                      <LazyImage 
                         src="https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=250&fit=crop&crop=center"
                         alt="Featured Drink"
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"

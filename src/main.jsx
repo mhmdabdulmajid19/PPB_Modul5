@@ -1,5 +1,5 @@
 // src/main.jsx
-import { StrictMode, useState } from 'react';
+import { StrictMode, useState, useEffect } from 'react'; // <-- Ditambahkan useEffect
 import { createRoot } from 'react-dom/client';
 import SplashScreen from './pages/SplashScreen';
 import HomePage from './pages/HomePage';
@@ -31,16 +31,27 @@ function AppRoot() {
     setMode('list');
     setSelectedRecipeId(null);
     setEditingRecipeId(null);
+    
+    // Hapus parameter URL saat navigasi ke halaman list
+    const url = new URL(window.location);
+    url.searchParams.delete('recipe');
+    window.history.pushState({}, '', url);
   };
 
   const handleCreateRecipe = () => {
     setMode('create');
   };
 
+  // UPDATE: handleRecipeClick untuk update URL
   const handleRecipeClick = (recipeId, category) => {
     setSelectedRecipeId(recipeId);
     setSelectedCategory(category || currentPage);
     setMode('detail');
+    
+    // Update URL tanpa reload
+    const url = new URL(window.location);
+    url.searchParams.set('recipe', recipeId);
+    window.history.pushState({}, '', url);
   };
 
   const handleEditRecipe = (recipeId) => {
@@ -50,14 +61,26 @@ function AppRoot() {
     console.log('🔄 Mode changed to: edit');
   };
 
+  // UPDATE: handleBack untuk membersihkan URL
   const handleBack = () => {
     setMode('list');
     setSelectedRecipeId(null);
     setEditingRecipeId(null);
+    
+    // Hapus parameter URL saat kembali ke tampilan daftar
+    const url = new URL(window.location);
+    url.searchParams.delete('recipe');
+    window.history.pushState({}, '', url);
   };
 
   const handleCreateSuccess = (newRecipe) => {
     alert('Resep berhasil dibuat!');
+    
+    // Bersihkan URL
+    const url = new URL(window.location);
+    url.searchParams.delete('recipe');
+    window.history.pushState({}, '', url);
+    
     setMode('list');
     
     // Optionally navigate to the new recipe's category
@@ -69,8 +92,29 @@ function AppRoot() {
   const handleEditSuccess = (updatedRecipe) => {
     console.log('✅ Recipe updated successfully:', updatedRecipe);
     alert('Resep berhasil diperbarui!');
+    
+    // Bersihkan URL
+    const url = new URL(window.location);
+    url.searchParams.delete('recipe');
+    window.history.pushState({}, '', url);
+    
     setMode('list');
   };
+  
+  // UPDATE: useEffect hook untuk membaca URL saat pertama kali dimuat
+  useEffect(() => {
+    // Hanya periksa param URL setelah splash screen selesai
+    if (!showSplash) {
+        const params = new URLSearchParams(window.location.search);
+        const recipeId = params.get('recipe');
+        
+        if (recipeId) {
+            // Panggil handleRecipeClick untuk mengatur state mode 'detail'
+            // Menggunakan undefined untuk category agar fallback ke currentPage
+            handleRecipeClick(recipeId, undefined); 
+        }
+    }
+  }, [showSplash]); // Dipanggil setelah state showSplash berubah
 
   const renderCurrentPage = () => {
     // Show Create Recipe Page

@@ -52,9 +52,41 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // Menambahkan format gambar ke globPatterns
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,jpg,jpeg,webp}'], 
         cleanupOutdatedCaches: true,
         clientsClaim: true,
+        
+        // Konfigurasi Runtime Caching
+        runtimeCaching: [
+          {
+            // Caching untuk API Resep (NetworkFirst: coba jaringan dulu, jika gagal ambil dari cache)
+            urlPattern: /^https:\/\/modlima\.fuadfakhruz\.id\/api\/v1\/recipes/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-recipes',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 5 * 60, // 5 minutes
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // Caching untuk semua gambar (CacheFirst: ambil dari cache dulu, jika tidak ada baru dari jaringan)
+            urlPattern: /\.(jpg|jpeg|png|gif|webp|svg)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+              },
+            },
+          },
+        ],
       },
       devOptions: {
         enabled: false,

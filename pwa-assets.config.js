@@ -8,5 +8,6 @@ export default defineConfig({
         preset: '2023',
     },
     preset,
-    images: ['public/favicon.ico'],
+    // Menggunakan LOGORN.png sebagai sumber utama alih-alih favicon.ico
+    images: ['public/LOGORN.png'], 
 })
