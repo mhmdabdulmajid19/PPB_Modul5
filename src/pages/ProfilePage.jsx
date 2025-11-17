@@ -1,6 +1,7 @@
 // src/pages/ProfilePage.jsx
+/*eslint-disable react/prop-types */
 import { useState, useEffect } from 'react';
-import { Camera, Edit2, Heart, User } from 'lucide-react';
+import { Camera, Edit2, Heart, User, Clock, Star } from 'lucide-react';
 import userService from '../services/userService';
 import { useFavorites } from '../hooks/useFavorites';
 
@@ -12,7 +13,7 @@ export default function ProfilePage({ onRecipeClick }) {
   });
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState('');
-  const { favorites, loading: favLoading, error: favError, refetch } = useFavorites();
+  const { favorites, loading: favLoading, refetch } = useFavorites();
 
   useEffect(() => {
     const userProfile = userService.getUserProfile();
@@ -20,12 +21,9 @@ export default function ProfilePage({ onRecipeClick }) {
     setTempUsername(userProfile.username);
   }, []);
 
-  // Auto-refresh favorites setiap 5 detik
+  // Refetch favorites when component mounts or when returning to this page
   useEffect(() => {
-    const interval = setInterval(() => {
-      refetch();
-    }, 5000);
-    return () => clearInterval(interval);
+    refetch();
   }, [refetch]);
 
   const handleAvatarChange = (e) => {
@@ -138,7 +136,7 @@ export default function ProfilePage({ onRecipeClick }) {
                 </div>
               )}
               
-              <p className="text-slate-500 mt-2">ID: {profile.userId}</p>
+              <p className="text-slate-500 mt-2 text-sm">ID: {profile.userId}</p>
             </div>
           </div>
         </div>
@@ -152,19 +150,6 @@ export default function ProfilePage({ onRecipeClick }) {
               {favorites.length}
             </span>
           </div>
-
-          {/* Error State */}
-          {favError && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
-              <p className="text-red-600 text-sm">Error: {favError}</p>
-              <button
-                onClick={refetch}
-                className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
-              >
-                Coba Lagi
-              </button>
-            </div>
-          )}
 
           {favLoading ? (
             <div className="text-center py-12">
@@ -181,42 +166,56 @@ export default function ProfilePage({ onRecipeClick }) {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {favorites.map((fav) => (
+              {favorites.map((recipe) => (
                 <div
-                  key={fav.recipe_id || fav.id}
-                  onClick={() => onRecipeClick && onRecipeClick(fav.recipe_id || fav.id)}
-                  className="group cursor-pointer bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300"
+                  key={recipe.id}
+                  onClick={() => onRecipeClick && onRecipeClick(recipe.id, recipe.category)}
+                  className="group cursor-pointer bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 >
                   <div className="relative h-40 overflow-hidden">
                     <img
-                      src={fav.recipe_image_url || fav.image_url || 'https://via.placeholder.com/300x200?text=No+Image'}
-                      alt={fav.recipe_name || fav.name || 'Recipe'}
+                      src={recipe.image_url}
+                      alt={recipe.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
-                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute bottom-2 left-2 right-2">
+                    
+                    {/* Category Badge */}
+                    <div className="absolute top-2 left-2">
+                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                        recipe.category === 'makanan' 
+                          ? 'bg-blue-500 text-white' 
+                          : 'bg-green-500 text-white'
+                      }`}>
+                        {recipe.category === 'makanan' ? 'Makanan' : 'Minuman'}
+                      </span>
+                    </div>
+
+                    {/* Recipe Name */}
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
                       <h3 className="text-white font-bold text-sm line-clamp-2">
-                        {fav.recipe_name || fav.name || 'Resep'}
+                        {recipe.name}
                       </h3>
                     </div>
                   </div>
+                  
+                  {/* Recipe Info */}
                   <div className="p-3">
-                    <div className="flex items-center justify-between text-xs text-slate-600">
-                      <span className={`px-2 py-1 rounded-full ${
-                        (fav.recipe_category || fav.category) === 'makanan' 
-                          ? 'bg-blue-100 text-blue-700' 
-                          : 'bg-green-100 text-green-700'
-                      }`}>
-                        {(fav.recipe_category || fav.category) === 'makanan' ? 'Makanan' : 'Minuman'}
-                      </span>
-                      {(fav.recipe_prep_time || fav.prep_time) && (
-                        <span className="font-medium">
-                          {fav.recipe_prep_time || fav.prep_time} menit
-                        </span>
+                    <div className="flex items-center justify-between text-xs text-slate-600 mb-2">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span className="font-medium">{recipe.prep_time} mnt</span>
+                      </div>
+                      {recipe.average_rating > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                          <span className="font-medium">{recipe.average_rating.toFixed(1)}</span>
+                        </div>
                       )}
+                    </div>
+                    
+                    <div className="text-xs text-slate-500 capitalize">
+                      Kesulitan: <span className="font-medium">{recipe.difficulty}</span>
                     </div>
                   </div>
                 </div>
