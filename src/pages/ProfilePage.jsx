@@ -12,13 +12,21 @@ export default function ProfilePage({ onRecipeClick }) {
   });
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState('');
-  const { favorites, loading: favLoading } = useFavorites();
+  const { favorites, loading: favLoading, error: favError, refetch } = useFavorites();
 
   useEffect(() => {
     const userProfile = userService.getUserProfile();
     setProfile(userProfile);
     setTempUsername(userProfile.username);
   }, []);
+
+  // Auto-refresh favorites setiap 5 detik
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetch();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [refetch]);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
@@ -145,6 +153,19 @@ export default function ProfilePage({ onRecipeClick }) {
             </span>
           </div>
 
+          {/* Error State */}
+          {favError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+              <p className="text-red-600 text-sm">Error: {favError}</p>
+              <button
+                onClick={refetch}
+                className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+              >
+                Coba Lagi
+              </button>
+            </div>
+          )}
+
           {favLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -162,33 +183,40 @@ export default function ProfilePage({ onRecipeClick }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {favorites.map((fav) => (
                 <div
-                  key={fav.id}
-                  onClick={() => onRecipeClick && onRecipeClick(fav.id)}
+                  key={fav.recipe_id || fav.id}
+                  onClick={() => onRecipeClick && onRecipeClick(fav.recipe_id || fav.id)}
                   className="group cursor-pointer bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300"
                 >
                   <div className="relative h-40 overflow-hidden">
                     <img
-                      src={fav.image_url}
-                      alt={fav.name}
+                      src={fav.recipe_image_url || fav.image_url || 'https://via.placeholder.com/300x200?text=No+Image'}
+                      alt={fav.recipe_name || fav.name || 'Recipe'}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-2 left-2 right-2">
                       <h3 className="text-white font-bold text-sm line-clamp-2">
-                        {fav.name}
+                        {fav.recipe_name || fav.name || 'Resep'}
                       </h3>
                     </div>
                   </div>
                   <div className="p-3">
                     <div className="flex items-center justify-between text-xs text-slate-600">
                       <span className={`px-2 py-1 rounded-full ${
-                        fav.category === 'makanan' 
+                        (fav.recipe_category || fav.category) === 'makanan' 
                           ? 'bg-blue-100 text-blue-700' 
                           : 'bg-green-100 text-green-700'
                       }`}>
-                        {fav.category === 'makanan' ? 'Makanan' : 'Minuman'}
+                        {(fav.recipe_category || fav.category) === 'makanan' ? 'Makanan' : 'Minuman'}
                       </span>
-                      <span className="font-medium">{fav.prep_time} menit</span>
+                      {(fav.recipe_prep_time || fav.prep_time) && (
+                        <span className="font-medium">
+                          {fav.recipe_prep_time || fav.prep_time} menit
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
