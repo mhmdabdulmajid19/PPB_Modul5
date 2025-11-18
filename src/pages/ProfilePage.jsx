@@ -1,11 +1,12 @@
 // src/pages/ProfilePage.jsx
 /*eslint-disable react/prop-types */
 import { useState, useEffect } from 'react';
-import { Camera, Edit2, Heart, User, Clock, Star } from 'lucide-react';
+import { Camera, Edit2, Heart, User, Clock, Star, ChefHat, Coffee } from 'lucide-react';
 import userService from '../services/userService';
 import { useFavorites } from '../hooks/useFavorites';
 
 export default function ProfilePage({ onRecipeClick }) {
+  // ===== STATE PROFIL (TIDAK BERUBAH) =====
   const [profile, setProfile] = useState({
     username: '',
     avatar: null,
@@ -13,19 +14,23 @@ export default function ProfilePage({ onRecipeClick }) {
   });
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState('');
+  
+  // ===== TAMBAHAN: STATE FAVORIT =====
   const { favorites, loading: favLoading, refetch } = useFavorites();
 
+  // ===== LOAD PROFILE (TIDAK BERUBAH) =====
   useEffect(() => {
     const userProfile = userService.getUserProfile();
     setProfile(userProfile);
     setTempUsername(userProfile.username);
   }, []);
 
-  // Refetch favorites when component mounts or when returning to this page
+  // ===== REFETCH FAVORITES =====
   useEffect(() => {
     refetch();
   }, [refetch]);
 
+  // ===== HANDLE AVATAR (TIDAK BERUBAH) =====
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -46,6 +51,7 @@ export default function ProfilePage({ onRecipeClick }) {
     reader.readAsDataURL(file);
   };
 
+  // ===== HANDLE USERNAME (TIDAK BERUBAH) =====
   const handleUsernameUpdate = () => {
     if (!tempUsername.trim()) {
       alert('Username tidak boleh kosong');
@@ -63,7 +69,8 @@ export default function ProfilePage({ onRecipeClick }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 pb-20 md:pb-8">
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Profile Header */}
+        
+        {/* ===== PROFILE HEADER (TIDAK BERUBAH) ===== */}
         <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-xl border border-white/40 mb-6">
           <h1 className="text-3xl font-bold text-slate-800 mb-6">Profil Saya</h1>
           
@@ -141,7 +148,7 @@ export default function ProfilePage({ onRecipeClick }) {
           </div>
         </div>
 
-        {/* Favorites Section */}
+        {/* ===== FAVORITES SECTION (DITAMBAHKAN) ===== */}
         <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-xl border border-white/40">
           <div className="flex items-center gap-3 mb-6">
             <Heart className="w-6 h-6 text-red-500 fill-current" />
@@ -151,12 +158,14 @@ export default function ProfilePage({ onRecipeClick }) {
             </span>
           </div>
 
+          {/* Loading State */}
           {favLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
               <p className="mt-4 text-slate-600">Memuat favorit...</p>
             </div>
           ) : favorites.length === 0 ? (
+            /* Empty State */
             <div className="text-center py-12">
               <Heart className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <p className="text-slate-500 text-lg">Belum ada resep favorit</p>
@@ -165,6 +174,7 @@ export default function ProfilePage({ onRecipeClick }) {
               </p>
             </div>
           ) : (
+            /* Favorites Grid */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {favorites.map((recipe) => (
                 <div
@@ -172,10 +182,12 @@ export default function ProfilePage({ onRecipeClick }) {
                   onClick={() => onRecipeClick && onRecipeClick(recipe.id, recipe.category)}
                   className="group cursor-pointer bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 >
+                  {/* Image */}
                   <div className="relative h-40 overflow-hidden">
                     <img
                       src={recipe.image_url}
                       alt={recipe.name}
+                      loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -214,8 +226,15 @@ export default function ProfilePage({ onRecipeClick }) {
                       )}
                     </div>
                     
-                    <div className="text-xs text-slate-500 capitalize">
-                      Kesulitan: <span className="font-medium">{recipe.difficulty}</span>
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span className="capitalize">
+                        {recipe.difficulty}
+                      </span>
+                      {recipe.category === 'makanan' ? (
+                        <ChefHat className="w-3 h-3" />
+                      ) : (
+                        <Coffee className="w-3 h-3" />
+                      )}
                     </div>
                   </div>
                 </div>
