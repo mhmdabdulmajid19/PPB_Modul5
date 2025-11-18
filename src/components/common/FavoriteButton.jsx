@@ -2,8 +2,6 @@
 /*eslint-disable react/prop-types */
 import { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
-import favoriteService from '../../services/favoriteService';
-import userService from '../../services/userService';
 
 /**
  * FavoriteButton Component
@@ -19,7 +17,6 @@ export default function FavoriteButton({
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(initialCount);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   // Size variants
   const sizes = {
@@ -36,92 +33,42 @@ export default function FavoriteButton({
 
   // Check if recipe is favorited on mount
   useEffect(() => {
-    const checkFavoriteStatus = async () => {
-      try {
-        const userIdentifier = userService.getUserIdentifier();
-        const response = await favoriteService.isFavorited(recipeId, userIdentifier);
-        
-        if (response.success) {
-          setIsFavorited(response.data.is_favorited);
-        }
-      } catch (err) {
-        console.error('Error checking favorite status:', err);
-      }
-    };
-
-    checkFavoriteStatus();
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    setIsFavorited(favorites.includes(recipeId));
   }, [recipeId]);
 
   const handleToggle = async (e) => {
     e.stopPropagation();
     
-    if (loading) return;
-
     setIsAnimating(true);
     setTimeout(() => setIsAnimating(false), 300);
 
-    try {
-      setLoading(true);
-      const userIdentifier = userService.getUserIdentifier();
-      
-      // Toggle favorite via API
-      const response = await favoriteService.toggleFavorite({
-        recipe_id: recipeId,
-        user_identifier: userIdentifier,
-      });
+    // Toggle in localStorage
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    const index = favorites.indexOf(recipeId);
+    let newFavoritedState;
 
-      if (response.success) {
-        const newFavoritedState = response.data.is_favorited;
-        setIsFavorited(newFavoritedState);
-        
-        // Update count
-        if (newFavoritedState) {
-          setFavoriteCount(prev => prev + 1);
-        } else {
-          setFavoriteCount(prev => Math.max(0, prev - 1));
-        }
+    if (index > -1) {
+      favorites.splice(index, 1);
+      newFavoritedState = false;
+      setFavoriteCount(prev => Math.max(0, prev - 1));
+    } else {
+      favorites.push(recipeId);
+      newFavoritedState = true;
+      setFavoriteCount(prev => prev + 1);
+    }
 
-        // Callback to parent
-        if (onToggle) {
-          onToggle(recipeId, newFavoritedState);
-        }
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+    setIsFavorited(newFavoritedState);
 
-        // Show toast notification
-        const message = newFavoritedState 
-          ? '❤️ Ditambahkan ke favorit' 
-          : '💔 Dihapus dari favorit';
-        
-        // Create simple toast
-        const toast = document.createElement('div');
-        toast.className = 'fixed top-20 right-4 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-slideIn';
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-          toast.remove();
-        }, 2000);
-      }
-    } catch (err) {
-      console.error('Error toggling favorite:', err);
-      
-      // Show error toast
-      const toast = document.createElement('div');
-      toast.className = 'fixed top-20 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-      toast.textContent = '❌ Gagal memperbarui favorit';
-      document.body.appendChild(toast);
-      
-      setTimeout(() => {
-        toast.remove();
-      }, 2000);
-    } finally {
-      setLoading(false);
+    if (onToggle) {
+      onToggle(recipeId, newFavoritedState);
     }
   };
 
   return (
     <button
       onClick={handleToggle}
-      disabled={loading}
       className={`
         ${sizes[size]} rounded-full flex items-center justify-center gap-1.5
         transition-all duration-200
@@ -131,10 +78,9 @@ export default function FavoriteButton({
         }
         backdrop-blur-sm shadow-md hover:shadow-lg
         ${isAnimating ? 'scale-125' : 'scale-100'}
-        ${loading ? 'opacity-50 cursor-wait' : 'cursor-pointer'}
         group
       `}
-      title={isFavorited ? 'Hapus dari favorit' : 'Tambah ke favorit'}
+      title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
     >
       <Heart
         className={`

@@ -1,5 +1,4 @@
-// src/components/recipe/RecipeDetail.jsx
-/*eslint-disable react/prop-types */
+// src/components/recipe/RecipeDetail.jsx - LENGKAP & DIPERBAIKI
 import { useState } from 'react';
 import { useRecipe } from '../../hooks/useRecipes';
 import { useReviews, useCreateReview } from '../../hooks/useReviews';
@@ -14,7 +13,7 @@ import {
   Send,
   Edit,
   Trash2,
-  Share2, // <-- Ditambahkan
+  Share2,
 } from 'lucide-react';
 import recipeService from '../../services/recipeService';
 import ConfirmModal from '../modals/ConfirmModal';
@@ -59,7 +58,7 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
   const handleShare = async () => {
     const shareData = {
       title: recipe.name,
-      text: `Lihat resep ini: ${recipe.name}`, // Mengubah teks ke Bahasa Indonesia
+      text: `Lihat resep ini: ${recipe.name}`,
       url: window.location.href,
     };
 
@@ -67,7 +66,6 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
-        // Fallback: copy to clipboard
         await navigator.clipboard.writeText(window.location.href);
         alert('Link berhasil disalin ke clipboard!');
       }
@@ -76,27 +74,53 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
     }
   };
 
-
+  // ✅ FUNGSI INI YANG DIPERBAIKI
   const handleSubmitReview = async (e) => {
     e.preventDefault();
-    const userProfile = userService.getUserProfile();
-    const reviewData = {
-      user_identifier: userProfile.username || getUserIdentifier(),
-      rating,
-      comment: comment.trim(),
-    };
-    // Menggunakan 'result' karena createReview mengembalikan objek respons jika sukses
-    const result = await createReview(recipeId, reviewData); 
     
-    // PENTING: Jika result ada (truthy, berarti sukses), lakukan update UI
-    if (result) {
-      setComment('');
-      setRating(5);
-      setShowReviewForm(false);
-      refetchReviews(); // <-- Memanggil fungsi ini untuk memuat ulasan baru
+    // Validasi
+    if (!comment.trim() && rating === 0) {
+      alert('⚠️ Silakan berikan rating dan komentar');
+      return;
+    }
+    
+    try {
+      const userProfile = userService.getUserProfile();
+      
+      const reviewData = {
+        user_identifier: userProfile.username || getUserIdentifier(),
+        rating: parseInt(rating),
+        comment: comment.trim(),
+      };
+      
+      console.log('📤 Submitting review:', reviewData);
+      
+      // createReview return true/false
+      const success = await createReview(recipeId, reviewData);
+      
+      console.log('📥 Review result:', success);
+      
+      if (success) {
+        // Reset form
+        setComment('');
+        setRating(5);
+        setShowReviewForm(false);
+        
+        // Notifikasi
+        alert('✅ Ulasan berhasil ditambahkan!');
+        
+        // Refresh reviews - PENTING!
+        await refetchReviews();
+        
+        console.log('🔄 Reviews refreshed');
+      } else {
+        alert('❌ Gagal menambahkan ulasan. Silakan coba lagi.');
+      }
+    } catch (err) {
+      console.error('❌ Error in handleSubmitReview:', err);
+      alert('❌ Terjadi kesalahan: ' + err.message);
     }
   };
-
 
   const handleDeleteRecipe = async () => {
     try {
@@ -197,12 +221,7 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
           {onEdit && (
             <div className="flex gap-2">
               <button
-                onClick={() => {
-                  console.log('Edit button clicked in RecipeDetail');
-                  console.log('Recipe ID:', recipeId);
-                  console.log('onEdit function:', onEdit);
-                  onEdit(recipeId);
-                }}
+                onClick={() => onEdit(recipeId)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Edit className="w-4 h-4" />
@@ -229,7 +248,7 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
             <img src={recipe.image_url} alt={recipe.name} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-            {/* Favorite & Share Buttons (UPDATED) */}
+            {/* Favorite & Share Buttons */}
             <div className="absolute top-4 right-4 z-10 flex gap-2">
               <FavoriteButton recipeId={recipeId} size="lg" />
             
@@ -325,7 +344,7 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
               <div
                 className={`w-10 h-10 rounded-full bg-${colors.primary}-100 flex items-center justify-center`}
               >
-                <span className={`text-${colors.primary}-600 text-xl`}> </span>
+                <span className={`text-${colors.primary}-600 text-xl`}>🥘</span>
               </div>
               Bahan-bahan
             </h2>
@@ -351,7 +370,7 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
               <div
                 className={`w-10 h-10 rounded-full bg-${colors.primary}-100 flex items-center justify-center`}
               >
-                <span className={`text-${colors.primary}-600 text-xl`}> </span>
+                <span className={`text-${colors.primary}-600 text-xl`}>👨‍🍳</span>
               </div>
               Langkah-langkah
             </h2>

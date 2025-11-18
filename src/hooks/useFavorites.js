@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import favoriteService from '../services/favoriteService';
-import recipeService from '../services/recipeService';
 import userService from '../services/userService';
 
 /**
@@ -11,7 +10,7 @@ const getUserIdentifier = () => {
 };
 
 /**
- * Custom hook for fetching favorites with full recipe details
+ * Custom hook for fetching favorites
  */
 export function useFavorites() {
   const [favorites, setFavorites] = useState([]);
@@ -24,37 +23,14 @@ export function useFavorites() {
       setLoading(true);
       setError(null);
       
-      // Get favorite IDs from API
       const response = await favoriteService.getFavorites(userIdentifier);
       
-      if (response.success && response.data && response.data.length > 0) {
-        // Fetch full recipe details for each favorite
-        const recipePromises = response.data.map(async (fav) => {
-          try {
-            const recipeResponse = await recipeService.getRecipeById(fav.recipe_id);
-            if (recipeResponse.success && recipeResponse.data) {
-              return {
-                ...recipeResponse.data,
-                favorite_id: fav.id,
-                favorited_at: fav.created_at
-              };
-            }
-            return null;
-          } catch (err) {
-            console.error(`Error fetching recipe ${fav.recipe_id}:`, err);
-            return null;
-          }
-        });
-
-        const recipesData = await Promise.all(recipePromises);
-        const validRecipes = recipesData.filter(recipe => recipe !== null);
-        
-        setFavorites(validRecipes);
+      if (response.success) {
+        setFavorites(response.data || []);
       } else {
-        setFavorites([]);
+        setError(response.message || 'Failed to fetch favorites');
       }
     } catch (err) {
-      console.error('Error fetching favorites:', err);
       setError(err.message || 'An error occurred while fetching favorites');
       setFavorites([]);
     } finally {
